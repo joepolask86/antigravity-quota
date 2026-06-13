@@ -8,7 +8,7 @@ Real-time dashboard that auto-discovers running Antigravity IDE language server 
 ![100% Local](https://img.shields.io/badge/data-100%25_local-22c55e)
 ![MIT](https://img.shields.io/badge/license-MIT-6366f1)
 
-![screenshot](docs/Antigravity-Quota-Tracker.png)
+![screenshot](public/Antigravity-Quota-Tracker.png)
 
 ## How it works
 

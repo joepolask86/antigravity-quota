@@ -436,6 +436,9 @@ function checkModelNotifications(accounts) {
     const prev = prevModelStates.get(acc.email) || new Map();
     const curr = new Map(acc.models.map(m => [m.label, m]));
 
+    const batchLastNotified = prev.get('_batch') || 0;
+    const availableModels = [];
+
     for (const [label, model] of curr) {
       const curFrac = model.remainingFraction;
       const prevFrac = prev.get(label)?.remainingFraction;
@@ -443,27 +446,29 @@ function checkModelNotifications(accounts) {
       const wasExhausted = prevFrac === null || prevFrac === 0;
       const nowAvailable = curFrac !== null && curFrac > 0;
 
-      if (wasExhausted && nowAvailable) {
-        const pct = Math.round(curFrac * 100);
-        const key = `${acc.email}|${label}`;
-        const lastNotified = notifications
-          .filter(n => n.key === key)
-          .pop()?.at || 0;
-        if (now - lastNotified > NOTIFICATION_COOLDOWN) {
-          notifications.push({
-            key,
-            email: acc.email,
-            name: acc.name || acc.email,
-            model: label,
-            pct,
-            at: now,
-          });
-          console.log(`[notify] ${acc.email}: ${label} available (${pct}%)`);
-        }
+      if (wasExhausted && nowAvailable && now - batchLastNotified > NOTIFICATION_COOLDOWN) {
+        availableModels.push({ label, pct: Math.round(curFrac * 100) });
       }
     }
 
     prevModelStates.set(acc.email, curr);
+
+    if (availableModels.length > 0) {
+      const pct = availableModels[0].pct;
+      const names = availableModels.length <= 3
+        ? availableModels.map(m => m.label).join(', ')
+        : `${availableModels.length} models`;
+      notifications.push({
+        key: `${acc.email}|_batch`,
+        email: acc.email,
+        name: acc.name || acc.email,
+        model: names,
+        pct,
+        at: now,
+      });
+      console.log(`[notify] ${acc.email}: ${availableModels.length} model(s) available`);
+      prev.set('_batch', now);
+    }
   }
 }
 

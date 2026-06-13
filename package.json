@@ -2,11 +2,51 @@
   "name": "quota-tracker",
   "version": "1.0.0",
   "description": "AI Quota & Usage Tracker",
-  "main": "server.js",
+  "main": "electron/main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "electron": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder --win --mac"
   },
   "dependencies": {
     "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.antigravity.quota-tracker",
+    "productName": "Antigravity Quota Tracker",
+    "icon": "icons/png/512.png",
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "server.js",
+      "antigravity.js",
+      "data.json",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "icons/", "to": "icons/" }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icons/win/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools",
+      "icon": "icons/mac/icon.icns"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    }
   }
 }

@@ -30,6 +30,10 @@ body {
   color: var(--text);
   min-height: 100vh;
 }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hi); }
 header {
   position: sticky;
   top: 0;
@@ -40,7 +44,31 @@ header {
   display: flex;
   align-items: center;
   gap: 14px;
+  -webkit-app-region: drag;
 }
+header button, header input { -webkit-app-region: no-drag; }
+.window-controls {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+  -webkit-app-region: no-drag;
+}
+.win-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  width: 32px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.win-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.win-btn:last-child:hover { background: var(--red); color: #fff; }
 .logo {
   background: var(--accent);
   color: #fff;
@@ -56,7 +84,7 @@ header {
 }
 .header-text { flex: 1; min-width: 0; }
 .header-text h1 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.5px;
   line-height: 1.2;
@@ -94,7 +122,7 @@ header {
 }
 #clock {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--accent-hi);
   letter-spacing: 1px;
@@ -143,7 +171,7 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
   overflow: hidden;
   transition: opacity 0.3s;
 }
-.card.offline { opacity: 0.85; border-color: var(--muted); }
+.card.offline { opacity: 0.85; border-color: var(--border); }
 .card-header {
   display: flex;
   align-items: center;
@@ -171,6 +199,7 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
 .card-body.collapsed { display: none; }
 .card-header .email {
   font-weight: 500;
+  font-size: 14px;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -189,11 +218,16 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
 .plan-Free, .plan-Starter, .plan-starter { background: #252a38; color: var(--muted); }
 .plan-Pro { background: #6366f122; color: var(--accent-hi); border: 1px solid #6366f144; }
 .plan-Ultra { background: #f59e0b22; color: var(--amber); border: 1px solid #f59e0b44; }
-.credits-line {
-  font-size: 12px;
-  color: var(--muted);
+.avail-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
   white-space: nowrap;
 }
+.avail-badge.avail-yes { background: #22c55e18; color: #22c55e; }
+.avail-badge.avail-no { background: #6b749418; color: #6b7494; }
+
 .card-body { padding: 0; }
 table {
   width: 100%;
@@ -419,6 +453,10 @@ tbody tr.stale td { opacity: 0.7; }
   </div>
   <div class="header-right">
     <div id="clock">00:00:00</div>
+    <div class="window-controls">
+      <button class="win-btn" onclick="if(window.electron)electron.minimize()" title="Minimize">─</button>
+      <button class="win-btn" onclick="if(window.electron)electron.close()" title="Close">✕</button>
+    </div>
   </div>
 </header>
 
@@ -685,6 +723,50 @@ function escHtml(s) {
   return d.innerHTML;
 }
 
+function getTierGroups(models) {
+  const groups = {};
+  for (const m of models || []) {
+    const label = m.label || '';
+    let tier = 'Other';
+    if (label.includes('Gemini')) tier = 'Gemini';
+    else if (label.includes('Claude') || label.includes('GPT')) tier = 'Premium';
+    if (!groups[tier]) groups[tier] = [];
+    groups[tier].push(m);
+  }
+  return groups;
+}
+
+function tierStatus(groups) {
+  const entries = [];
+  for (const [tier, models] of Object.entries(groups)) {
+    let worst = 'available';
+    for (const m of models) {
+      const f = m.remainingFraction;
+      if (f === null || f === undefined) { worst = 'exhausted'; }
+      else if (f <= 0) { worst = 'exhausted'; }
+      else if (f < 0.15 && worst !== 'exhausted') { worst = 'critical'; }
+      else if (f < 0.35 && worst !== 'exhausted' && worst !== 'critical') { worst = 'low'; }
+    }
+    const colors = { available: '#22c55e', low: '#f59e0b', critical: '#ef4444', exhausted: '#6b7494' };
+    const labels = { available: 'Available', low: 'Low', critical: 'Critical', exhausted: 'Exhausted' };
+    const counts = { available: 0, total: models.length };
+    for (const m of models) {
+      if (m.remainingFraction !== null && m.remainingFraction !== undefined && m.remainingFraction > 0) counts.available++;
+    }
+    entries.push({ tier, status: worst, color: colors[worst], label: labels[worst], available: counts.available, total: counts.total });
+  }
+  return entries;
+}
+
+function accountAvailability(models) {
+  if (!models || models.length === 0) return { available: 0, total: 0 };
+  let avail = 0;
+  for (const m of models) {
+    if (m.remainingFraction !== null && m.remainingFraction !== undefined && m.remainingFraction > 0) avail++;
+  }
+  return { available: avail, total: models.length };
+}
+
 function initCollapsed() {
   for (const acc of accounts) {
     if (acc.connected === false && collapsed[acc.email] === undefined) {
@@ -705,10 +787,14 @@ function render() {
     return;
   }
 
+  const sorted = [...accounts].sort((a, b) => (b.connected !== false ? 1 : 0) - (a.connected !== false ? 1 : 0));
   let html = '';
-  for (const acc of accounts) {
+  for (const acc of sorted) {
     const online = acc.connected !== false;
     const isCollapsed = collapsed[acc.email] !== false;
+    const avail = accountAvailability(acc.models);
+    const anyAvail = avail.available > 0;
+    const availLabel = avail.total > 0 ? `${anyAvail ? '🟢' : '🔴'} ${avail.available}/${avail.total}` : '';
 
     const cardClass = 'card' + (online ? '' : ' offline');
     const headerClass = 'card-header' + (online ? '' : ' collapsible');
@@ -719,7 +805,7 @@ function render() {
         <span class="conn-dot ${online ? 'online' : 'offline'}"></span>
         <span class="email">${escHtml(acc.email)}</span>
         <span class="plan-badge plan-${acc.planCss || acc.plan}">${escHtml(acc.plan)}</span>
-        <span class="credits-line">${acc.availablePromptCredits ?? '?'} / ${acc.monthlyPromptCredits ?? '?'} credits</span>
+        ${availLabel ? `<span class="avail-badge ${anyAvail ? 'avail-yes' : 'avail-no'}">${availLabel}</span>` : ''}
         ${online ? '' : `<span class="collapse-arrow">${isCollapsed ? '▶' : '▼'}</span>`}
         ${online ? '' : '<span style="font-size:11px;color:var(--muted)">⚫ Offline</span>'}
         <span class="card-actions">
