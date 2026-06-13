@@ -2,8 +2,13 @@
 
 Real-time dashboard that auto-discovers running Antigravity IDE language server processes and displays AI model quota usage across multiple accounts. No API keys required — it talks directly to the local language server.
 
-![screenshot](https://img.shields.io/badge/status-active-success)
-![Node](https://img.shields.io/badge/node-%3E%3D18-blue)
+![Platform](https://img.shields.io/badge/Platform-Antigravity-6366f1)
+![status](https://img.shields.io/badge/status-active-success)
+![Node](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+![100% Local](https://img.shields.io/badge/data-100%25_local-22c55e)
+![MIT](https://img.shields.io/badge/license-MIT-6366f1)
+
+![screenshot](docs/Antigravity-Quota-Tracker.png)
 
 ## How it works
 
@@ -51,25 +56,25 @@ The dashboard polls the language server every 30 seconds and refreshes the UI ev
 
 ### Environment variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3001` | HTTP server port |
-| `POLL_INTERVAL` | `30000` | Polling interval in ms |
-| `MOCK` | `false` | Serve mock data when `true` |
+| Variable        | Default | Description                 |
+| --------------- | ------- | --------------------------- |
+| `PORT`          | `3001`  | HTTP server port            |
+| `POLL_INTERVAL` | `30000` | Polling interval in ms      |
+| `MOCK`          | `false` | Serve mock data when `true` |
 
 ## API endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/quota` | Current quota snapshot with live/offline accounts |
-| `POST` | `/api/refresh` | Force immediate poll |
-| `GET` | `/api/accounts` | List all known accounts |
-| `POST` | `/api/accounts` | Add an account (`{ email }`) |
-| `PUT` | `/api/accounts/:email` | Update account name or email |
-| `DELETE` | `/api/accounts/:email` | Remove an account |
-| `GET` | `/api/notifications` | Get and clear model-available alerts |
-| `GET` | `/api/raw-response` | Raw JSON from last language server query (debug) |
-| `GET` | `/api/status` | Poller status and recent errors |
+| Method   | Path                   | Description                                       |
+| -------- | ---------------------- | ------------------------------------------------- |
+| `GET`    | `/api/quota`           | Current quota snapshot with live/offline accounts |
+| `POST`   | `/api/refresh`         | Force immediate poll                              |
+| `GET`    | `/api/accounts`        | List all known accounts                           |
+| `POST`   | `/api/accounts`        | Add an account (`{ email }`)                      |
+| `PUT`    | `/api/accounts/:email` | Update account name or email                      |
+| `DELETE` | `/api/accounts/:email` | Remove an account                                 |
+| `GET`    | `/api/notifications`   | Get and clear model-available alerts              |
+| `GET`    | `/api/raw-response`    | Raw JSON from last language server query (debug)  |
+| `GET`    | `/api/status`          | Poller status and recent errors                   |
 
 ## Project structure
 
