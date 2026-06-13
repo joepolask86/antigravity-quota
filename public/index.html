@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antigravity Quota Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0b0d11;
+  --surface: #13161d;
+  --card: #1a1e28;
+  --border: #252a38;
+  --border-hi: #2f3650;
+  --text: #e2e6f0;
+  --muted: #6b7494;
+  --accent: #6366f1;
+  --accent-hi: #818cf8;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --radius: 10px;
+}
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.logo {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.header-text { flex: 1; min-width: 0; }
+.header-text h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.header-row .subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.header-row .account-badge {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.header-row .account-badge.live {
+  color: var(--green);
+  border-color: var(--green);
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+#clock {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--accent-hi);
+  letter-spacing: 1px;
+}
+main { max-width: 960px; margin: 0 auto; padding: 24px; }
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dashboard-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.dashboard-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: background 0.2s, opacity 0.2s;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hi); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: opacity 0.3s;
+}
+.card.offline { opacity: 0.85; border-color: var(--muted); }
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.conn-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.conn-dot.online { background: var(--green); }
+.conn-dot.offline { background: var(--muted); }
+.card-header.collapsible { cursor: pointer; user-select: none; }
+.card-header.collapsible:hover { background: rgba(99,102,241,0.05); }
+.collapse-arrow {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.card-body.collapsed { display: none; }
+.card-header .email {
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.plan-Free, .plan-Starter, .plan-starter { background: #252a38; color: var(--muted); }
+.plan-Pro { background: #6366f122; color: var(--accent-hi); border: 1px solid #6366f144; }
+.plan-Ultra { background: #f59e0b22; color: var(--amber); border: 1px solid #f59e0b44; }
+.credits-line {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.card-body { padding: 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr.stale td { opacity: 0.7; }
+.model-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+.mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.progress-cell { min-width: 120px; }
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #252a38;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.progress-label {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.pulse {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.status-dot.pulse-fast {
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+.stale-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+}
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--border-hi); }
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+.btn-icon.danger:hover { color: var(--red); }
+.card-actions { display: flex; gap: 2px; margin-left: auto; flex-shrink: 0; }
+.input {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input:focus { border-color: var(--accent); }
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+}
+.modal-content h3 { margin-bottom: 6px; }
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 20px;
+}
+.empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+.empty-state p { font-size: 14px; margin-bottom: 6px; }
+.empty-state .hint { font-size: 12px; color: var(--muted); margin-top: 16px; }
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  pointer-events: auto;
+  animation: toast-in 0.3s ease-out;
+  max-width: 320px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.toast.removing {
+  animation: toast-out 0.25s ease-in forwards;
+}
+.toast.notification {
+  border-color: var(--green);
+  background: linear-gradient(135deg, #0f1a12, var(--card));
+}
+.toast.notification .notif-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--green);
+  margin-bottom: 2px;
+}
+.toast.notification .notif-body {
+  font-size: 12px;
+  color: var(--text);
+}
+@keyframes toast-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  main { padding: 14px; }
+  header { padding: 10px 14px; flex-wrap: wrap; }
+  .header-right { width: 100%; justify-content: flex-end; }
+  .card-header { flex-direction: column; align-items: flex-start; }
+  table { font-size: 12px; }
+  thead th, tbody td { padding: 8px 10px; }
+  .progress-cell { min-width: 80px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AG</div>
+  <div class="header-text">
+    <h1>Antigravity Quota Tracker</h1>
+    <div class="header-row">
+      <span class="subtitle">Antigravity</span>
+      <span id="accountBadge" class="account-badge">0 accounts live</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="clock">00:00:00</div>
+  </div>
+</header>
+
+<main>
+  <div class="dashboard-header">
+    <h2>Quota Dashboard</h2>
+    <div class="dashboard-info">
+      <span id="lastUpdated">—</span>
+      <button class="btn btn-secondary" onclick="showAddAccount()">+ Add Account</button>
+      <button id="refreshBtn" class="btn btn-primary" onclick="refresh()">Refresh</button>
+    </div>
+  </div>
+  <div id="addAccountModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <h3>Add Account</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Enter the Gmail address to track. The account will appear as offline until its Antigravity IDE instance is detected.</p>
+      <input id="addEmailInput" type="email" placeholder="email@gmail.com" class="input" />
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideAddAccount()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddAccount()">Add</button>
+      </div>
+    </div>
+  </div>
+  <div id="editAccountModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <h3>Edit Account</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Update the account display name or email address.</p>
+      <input id="editEmailInput" type="email" placeholder="email@gmail.com" class="input" style="margin-bottom:8px" />
+      <input id="editNameInput" type="text" placeholder="Display name (optional)" class="input" />
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideEditAccount()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitEditAccount()">Save</button>
+      </div>
+    </div>
+  </div>
+  <div id="deleteAccountModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <h3>Remove Account</h3>
+      <p id="deleteAccountText" style="font-size:13px;color:var(--muted);margin-bottom:12px"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideDeleteAccount()">Cancel</button>
+        <button class="btn btn-primary" style="background:var(--red)" onclick="submitDeleteAccount()">Remove</button>
+      </div>
+    </div>
+  </div>
+  <div id="accountsContainer"></div>
+</main>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+let accounts = [];
+let refreshing = false;
+let collapsed = {};
+
+function showAddAccount() {
+  document.getElementById('addAccountModal').style.display = 'flex';
+  document.getElementById('addEmailInput').value = '';
+  document.getElementById('addEmailInput').focus();
+}
+function hideAddAccount() {
+  document.getElementById('addAccountModal').style.display = 'none';
+}
+async function submitAddAccount() {
+  const email = document.getElementById('addEmailInput').value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+$/.test(email)) {
+    showToast('Please enter a valid email address');
+    return;
+  }
+  try {
+    const res = await fetch('/api/accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error();
+    showToast(`Account ${email} added`);
+    hideAddAccount();
+    initCollapsed();
+    await refresh();
+  } catch {
+    showToast('Failed to add account');
+  }
+}
+
+let editingEmail = null;
+let deletingEmail = null;
+
+function showEditAccount(email, name) {
+  editingEmail = email;
+  document.getElementById('editEmailInput').value = email;
+  document.getElementById('editNameInput').value = name;
+  document.getElementById('editAccountModal').style.display = 'flex';
+}
+function hideEditAccount() {
+  document.getElementById('editAccountModal').style.display = 'none';
+  editingEmail = null;
+}
+async function submitEditAccount() {
+  const newEmail = document.getElementById('editEmailInput').value.trim();
+  const name = document.getElementById('editNameInput').value.trim();
+  if (!newEmail || !/^[^\s@]+@[^\s@]+$/.test(newEmail)) {
+    showToast('Please enter a valid email address');
+    return;
+  }
+  try {
+    const res = await fetch('/api/accounts/' + encodeURIComponent(editingEmail), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newEmail, name: name || undefined }),
+    });
+    if (!res.ok) throw new Error();
+    hideEditAccount();
+    showToast('Account updated');
+    await loadData();
+  } catch {
+    showToast('Failed to update account');
+  }
+}
+
+function showDeleteAccount(email) {
+  deletingEmail = email;
+  document.getElementById('deleteAccountText').textContent = 'Remove ' + email + ' from the tracker?';
+  document.getElementById('deleteAccountModal').style.display = 'flex';
+}
+function hideDeleteAccount() {
+  document.getElementById('deleteAccountModal').style.display = 'none';
+  deletingEmail = null;
+}
+async function submitDeleteAccount() {
+  try {
+    const res = await fetch('/api/accounts/' + encodeURIComponent(deletingEmail), { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    hideDeleteAccount();
+    showToast('Account removed');
+    await loadData();
+  } catch {
+    showToast('Failed to remove account');
+  }
+}
+
+function showToast(message) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('removing');
+    el.addEventListener('animationend', () => el.remove());
+  }, 3000);
+}
+
+function showNotification(email, model, pct) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast notification';
+  el.innerHTML = `<div class="notif-title">Model Available!</div>
+    <div class="notif-body">${escHtml(email)} — ${escHtml(model)} <strong>${pct}%</strong></div>`;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('removing');
+    el.addEventListener('animationend', () => el.remove());
+  }, 5000);
+}
+
+async function checkNotifications() {
+  try {
+    const data = await api('GET', '/api/notifications');
+    if (data.notifications && data.notifications.length > 0) {
+      for (const n of data.notifications) {
+        showNotification(n.email, n.model, n.pct);
+      }
+    }
+  } catch {}
+}
+
+async function api(method, url) {
+  const opts = { method };
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error('Request failed');
+  return res.json();
+}
+
+async function loadData() {
+  try {
+    const data = await api('GET', '/api/quota');
+    accounts = data.accounts || [];
+    const live = data.accountCount || 0;
+    const badge = document.getElementById('accountBadge');
+    badge.textContent = `${live} account${live !== 1 ? 's' : ''} live`;
+    badge.className = 'account-badge' + (live > 0 ? ' live' : '');
+    if (data.lastUpdated) {
+      const d = new Date(data.lastUpdated);
+      document.getElementById('lastUpdated').textContent = `Updated ${d.toLocaleTimeString()}`;
+    }
+    initCollapsed();
+    render();
+  } catch {
+    showToast('Failed to load quota data');
+  }
+}
+
+async function refresh() {
+  if (refreshing) return;
+  refreshing = true;
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const data = await api('POST', '/api/refresh');
+    accounts = data.accounts || [];
+    const live = data.accountCount || 0;
+    const badge = document.getElementById('accountBadge');
+    badge.textContent = `${live} account${live !== 1 ? 's' : ''} live`;
+    badge.className = 'account-badge' + (live > 0 ? ' live' : '');
+    if (data.lastUpdated) {
+      const d = new Date(data.lastUpdated);
+      document.getElementById('lastUpdated').textContent = `Updated ${d.toLocaleTimeString()}`;
+    }
+    initCollapsed();
+    render();
+    showToast('Data refreshed');
+  } catch {
+    showToast('Refresh failed');
+  } finally {
+    refreshing = false;
+    btn.disabled = false;
+    btn.textContent = 'Refresh';
+  }
+}
+
+function computeStatus(remainingFraction) {
+  if (remainingFraction === null || remainingFraction === undefined) return { label: 'Exhausted', color: '#6b7494', pulse: false };
+  if (remainingFraction <= 0) return { label: 'Exhausted', color: '#6b7494', pulse: false };
+  if (remainingFraction > 0.35) return { label: 'Available', color: '#22c55e', pulse: true, fast: false };
+  if (remainingFraction >= 0.15) return { label: 'Low', color: '#f59e0b', pulse: false };
+  return { label: 'Critical', color: '#ef4444', pulse: true, fast: true };
+}
+
+function getProgressColor(fraction) {
+  if (fraction === null || fraction === undefined) return '#6b7494';
+  if (fraction > 0.35) return '#22c55e';
+  if (fraction >= 0.15) return '#f59e0b';
+  return '#ef4444';
+}
+
+function formatResetIn(resetTime) {
+  if (!resetTime) return '—';
+  const now = Date.now();
+  const diff = new Date(resetTime).getTime() - now;
+  if (diff <= 0) return 'Resetting...';
+  const totalSec = Math.floor(diff / 1000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  return `${h}h ${m}m`;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function initCollapsed() {
+  for (const acc of accounts) {
+    if (acc.connected === false && collapsed[acc.email] === undefined) {
+      collapsed[acc.email] = true;
+    }
+  }
+}
+
+function render() {
+  const container = document.getElementById('accountsContainer');
+
+  if (!accounts || accounts.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <h3>No accounts detected</h3>
+      <p>Open Antigravity to begin tracking your quota.</p>
+      <div class="hint">The tracker auto-detects running Antigravity IDE instances.</div>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  for (const acc of accounts) {
+    const online = acc.connected !== false;
+    const isCollapsed = collapsed[acc.email] !== false;
+
+    const cardClass = 'card' + (online ? '' : ' offline');
+    const headerClass = 'card-header' + (online ? '' : ' collapsible');
+    const bodyStyle = !online && isCollapsed ? ' collapsed' : '';
+
+    html += `<div class="${cardClass}">
+      <div class="${headerClass}" data-email="${acc.email}">
+        <span class="conn-dot ${online ? 'online' : 'offline'}"></span>
+        <span class="email">${escHtml(acc.email)}</span>
+        <span class="plan-badge plan-${acc.planCss || acc.plan}">${escHtml(acc.plan)}</span>
+        <span class="credits-line">${acc.availablePromptCredits ?? '?'} / ${acc.monthlyPromptCredits ?? '?'} credits</span>
+        ${online ? '' : `<span class="collapse-arrow">${isCollapsed ? '▶' : '▼'}</span>`}
+        ${online ? '' : '<span style="font-size:11px;color:var(--muted)">⚫ Offline</span>'}
+        <span class="card-actions">
+          <button class="btn-icon" onclick="event.stopPropagation();showEditAccount('${escHtml(acc.email)}','${escHtml(acc.name||'')}')" title="Edit">✎</button>
+          <button class="btn-icon danger" onclick="event.stopPropagation();showDeleteAccount('${escHtml(acc.email)}')" title="Delete">✕</button>
+        </span>
+      </div>
+      <div class="card-body${bodyStyle}">`;
+
+    if (!acc.models || acc.models.length === 0) {
+      html += `<div class="empty-state" style="padding:20px"><p>No models available</p></div>`;
+    } else {
+      html += `<table>
+        <thead><tr>
+          <th>Model</th><th>Remaining</th><th>Status</th><th>Resets In</th>
+        </tr></thead><tbody>`;
+
+      for (const m of acc.models) {
+        const status = computeStatus(m.remainingFraction);
+        const frac = m.remainingFraction;
+        const pct = frac !== null && frac !== undefined ? Math.round(frac * 100) : null;
+        const barWidth = frac !== null && frac !== undefined ? Math.round(frac * 100) : 0;
+        const dotClass = status.pulse ? (status.fast ? 'status-dot pulse-fast' : 'status-dot pulse') : 'status-dot';
+        const rowClass = online ? '' : 'stale';
+
+        html += `<tr class="${rowClass}">
+          <td class="model-name">${escHtml(m.label)}${online ? '' : ' <span class="stale-label">(stale)</span>'}</td>
+          <td class="progress-cell">
+            ${frac !== null ? `<div class="progress-bar"><div class="progress-fill" style="width:${barWidth}%;background:${getProgressColor(frac)}"></div></div>
+            <span class="progress-label" style="color:${getProgressColor(frac)}">${pct}%</span>` : '<span style="color:var(--muted);font-size:12px">Exhausted</span>'}
+          </td>
+          <td><span class="status-pill" style="background:${status.color}18; color:${status.color}">
+            <span class="${dotClass}" style="background:${status.color}"></span>
+            ${status.label}
+          </span></td>
+          <td class="mono">${formatResetIn(m.resetTime)}</td>
+        </tr>`;
+      }
+
+      html += `</tbody></table>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0, 8);
+}
+
+// Init
+(async () => {
+  await loadData();
+  initCollapsed();
+  document.getElementById('accountsContainer').addEventListener('click', (e) => {
+    const header = e.target.closest('.card-header.collapsible');
+    if (header) {
+      const email = header.dataset.email;
+      collapsed[email] = !collapsed[email];
+      render();
+    }
+  });
+  setInterval(render, 1000);
+  setInterval(loadData, 10000);
+  setInterval(checkNotifications, 5000);
+  updateClock();
+  setInterval(updateClock, 1000);
+})();
+</script>
+</body>
+</html>
