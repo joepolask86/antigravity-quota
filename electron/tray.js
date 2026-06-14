@@ -16,15 +16,23 @@ function fetchJson(url) {
 }
 
 function createTrayIcon() {
-  const iconPath = path.join(__dirname, '..', 'icons', 'png', '32x32.png');
-  const icon = nativeImage.createFromPath(iconPath);
-  if (!icon.isEmpty()) return icon.resize({ width: 16, height: 16 });
+  const paths = [];
+  if (process.resourcesPath) {
+    paths.push(path.join(process.resourcesPath, 'icons', 'png', '32x32.png'));
+  }
+  paths.push(path.join(__dirname, '..', 'icons', 'png', '32x32.png'));
+  for (const p of paths) {
+    const icon = nativeImage.createFromPath(p);
+    if (!icon.isEmpty()) return icon.resize({ width: 16, height: 16 });
+  }
   const canvas = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMklEQVQ4T2NkYPj/n4EBBJgYKAQM' +
     'FAMGShWQazg5BoD8QK4B5BoC1gUkpwsGFBUQAADJ4AQB2+EMmQAAAABJRU5ErkJggg==',
     'base64'
   );
-  return nativeImage.createFromBuffer(canvas);
+  const fallback = nativeImage.createFromBuffer(canvas);
+  if (!fallback.isEmpty()) return fallback.resize({ width: 16, height: 16 });
+  return nativeImage.createEmpty();
 }
 
 function createTray(mainWindow, serverUrl) {
@@ -38,25 +46,6 @@ function createTray(mainWindow, serverUrl) {
       items.push({
         label: 'Antigravity Quota Tracker',
         enabled: false,
-      });
-
-      items.push({ type: 'separator' });
-
-      items.push({
-        label: 'Open Dashboard',
-        click: () => {
-          if (mainWindow) {
-            mainWindow.show();
-            mainWindow.focus();
-          }
-        },
-      });
-
-      items.push({
-        label: 'Refresh Now',
-        click: () => {
-          fetchJson(`${serverUrl}/api/refresh`);
-        },
       });
 
       items.push({ type: 'separator' });

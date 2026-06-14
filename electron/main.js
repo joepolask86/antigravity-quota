@@ -83,6 +83,10 @@ function createWindow() {
   });
 }
 
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.antigravity.quota-tracker');
+}
+
 app.on('ready', async () => {
   try {
     console.log('[electron] Starting server...');

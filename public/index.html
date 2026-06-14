@@ -43,7 +43,7 @@ header {
   padding: 12px 24px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   -webkit-app-region: drag;
 }
 header button, header input { -webkit-app-region: no-drag; }
@@ -92,7 +92,7 @@ header button, header input { -webkit-app-region: no-drag; }
 .header-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
   margin-top: 2px;
 }
@@ -122,7 +122,7 @@ header button, header input { -webkit-app-region: no-drag; }
 }
 #clock {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--accent-hi);
   letter-spacing: 1px;
@@ -197,6 +197,7 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
   flex-shrink: 0;
 }
 .card-body.collapsed { display: none; }
+.card:has(.card-body.collapsed) .card-header { border-bottom: 0; }
 .card-header .email {
   font-weight: 500;
   font-size: 14px;
@@ -791,6 +792,7 @@ function render() {
   let html = '';
   for (const acc of sorted) {
     const online = acc.connected !== false;
+    const locked = acc.locked === true;
     const isCollapsed = collapsed[acc.email] !== false;
     const avail = accountAvailability(acc.models);
     const anyAvail = avail.available > 0;
@@ -806,8 +808,8 @@ function render() {
         <span class="email">${escHtml(acc.email)}</span>
         <span class="plan-badge plan-${acc.planCss || acc.plan}">${escHtml(acc.plan)}</span>
         ${availLabel ? `<span class="avail-badge ${anyAvail ? 'avail-yes' : 'avail-no'}">${availLabel}</span>` : ''}
-        ${online ? '' : `<span class="collapse-arrow">${isCollapsed ? '▶' : '▼'}</span>`}
-        ${online ? '' : '<span style="font-size:11px;color:var(--muted)">⚫ Offline</span>'}
+        ${!online ? `<span class="collapse-arrow">${isCollapsed ? '▶' : '▼'}</span>` : ''}
+        ${locked ? '<span style="font-size:11px;color:var(--muted)">🔒 Locked</span>' : (!online ? '<span style="font-size:11px;color:var(--muted)">⚫ Offline</span>' : '')}
         <span class="card-actions">
           <button class="btn-icon" onclick="event.stopPropagation();showEditAccount('${escHtml(acc.email)}','${escHtml(acc.name||'')}')" title="Edit">✎</button>
           <button class="btn-icon danger" onclick="event.stopPropagation();showDeleteAccount('${escHtml(acc.email)}')" title="Delete">✕</button>

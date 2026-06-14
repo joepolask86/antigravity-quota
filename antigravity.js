@@ -11,10 +11,10 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 
 let cachedServers = null;
 let cachedServersAt = 0;
-const SERVER_CACHE_TTL = 60000;
+const SERVER_CACHE_TTL = 15000;
 
 const portCache = new Map();
-const PORT_CACHE_TTL = 120000;
+const PORT_CACHE_TTL = 30000;
 
 function httpsPost(hostname, port, path, headers, body) {
   return new Promise((resolve, reject) => {
@@ -399,16 +399,25 @@ async function fetchAllQuotas() {
     seen.add(known.email);
     const live = liveByEmail.get(known.email);
     if (live) {
-      ordered.push({ ...live, connected: true });
+      ordered.push({ ...live, connected: true, locked: false });
     } else {
       const { display, css } = normalizePlan(known.plan);
-      ordered.push({ ...known, plan: display, planCss: css, connected: false });
+      ordered.push({ ...known, plan: display, planCss: css, connected: false, locked: known.locked || false });
     }
   }
 
   for (const [email, acc] of liveByEmail) {
     if (!seen.has(email)) {
-      ordered.push({ ...acc, connected: true });
+      ordered.push({ ...acc, connected: true, locked: false });
+    }
+  }
+
+  // Post-process: lock exhausted accounts, unlock recovered ones
+  for (const acc of ordered) {
+    if (allModelsExhausted(acc.models)) {
+      acc.locked = true;
+    } else {
+      acc.locked = false;
     }
   }
 
@@ -419,6 +428,14 @@ async function fetchAllQuotas() {
   const result = ordered.length > 0 ? ordered : generateMockAccounts();
   checkModelNotifications(result);
   return result;
+}
+
+function allModelsExhausted(models) {
+  if (!models || models.length === 0) return false;
+  return models.every(m => {
+    const f = m.remainingFraction;
+    return f === null || f === undefined || f <= 0;
+  });
 }
 
 // ─── Notifications ─────────────────────────────────────────────────────────────
