@@ -1,4 +1,4 @@
-# AI Quota & Usage Tracker
+# Antigravity Quota & Usage Tracker
 
 Real-time dashboard (web + Electron) that auto-discovers running Antigravity IDE language server processes and displays AI model quota usage across multiple accounts. No API keys required — it talks directly to the local language server.
 
