@@ -1,6 +1,6 @@
 {
   "name": "quota-tracker",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "AI Quota & Usage Tracker",
   "main": "electron/main.js",
   "scripts": {
