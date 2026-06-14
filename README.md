@@ -82,20 +82,6 @@ The dashboard polls the language server every 30 seconds and refreshes the UI ev
 | `POLL_INTERVAL` | `30000` | Polling interval in ms      |
 | `MOCK`          | `false` | Serve mock data when `true` |
 
-## API endpoints
-
-| Method   | Path                   | Description                                       |
-| -------- | ---------------------- | ------------------------------------------------- |
-| `GET`    | `/api/quota`           | Current quota snapshot with live/offline accounts |
-| `POST`   | `/api/refresh`         | Force immediate poll                              |
-| `GET`    | `/api/accounts`        | List all known accounts                           |
-| `POST`   | `/api/accounts`        | Add an account (`{ email }`)                      |
-| `PUT`    | `/api/accounts/:email` | Update account name or email                      |
-| `DELETE` | `/api/accounts/:email` | Remove an account                                 |
-| `GET`    | `/api/notifications`   | Get and clear model-available alerts              |
-| `GET`    | `/api/raw-response`    | Raw JSON from last language server query (debug)  |
-| `GET`    | `/api/status`          | Poller status and recent errors                   |
-
 ## Project structure
 
 ```
