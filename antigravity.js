@@ -7,6 +7,7 @@ const path = require('path');
 const FETCH_TIMEOUT = 3000;
 const PORT_SCAN_RANGE = [40000, 50000];
 const PORT_SCAN_CONCURRENCY = 10;
+const EXHAUSTION_THRESHOLD = 0.005; // fractions below 0.5% are treated as 0
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 let cachedServers = null;
@@ -256,11 +257,17 @@ function parseQuotaResponse(raw) {
 
   const models = (u.cascadeModelConfigData?.clientModelConfigs || [])
     .filter(m => m.quotaInfo && m.quotaInfo.resetTime)
-    .map(m => ({
-      label: m.label || 'Unknown',
-      remainingFraction: m.quotaInfo.remainingFraction ?? null,
-      resetTime: m.quotaInfo.resetTime,
-    }));
+    .map(m => {
+      const raw = m.quotaInfo.remainingFraction;
+      const normalized = raw !== null && raw !== undefined
+        ? (raw <= EXHAUSTION_THRESHOLD ? 0 : raw)
+        : null;
+      return {
+        label: m.label || 'Unknown',
+        remainingFraction: normalized,
+        resetTime: m.quotaInfo.resetTime,
+      };
+    });
 
   return {
     email: u.accountEmail || u.email || 'unknown',
@@ -421,7 +428,7 @@ async function fetchAllQuotas() {
     }
   }
 
-  if (ordered.length > 0 && servers.length > 0) {
+  if (ordered.length > 0) {
     saveAccounts(ordered);
   }
 
@@ -434,7 +441,7 @@ function allModelsExhausted(models) {
   if (!models || models.length === 0) return false;
   return models.every(m => {
     const f = m.remainingFraction;
-    return f === null || f === undefined || f <= 0;
+    return f === null || f === undefined || f <= EXHAUSTION_THRESHOLD;
   });
 }
 

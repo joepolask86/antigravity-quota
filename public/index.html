@@ -690,9 +690,11 @@ async function refresh() {
   }
 }
 
+const EXHAUSTION_THRESHOLD = 0.005;
+
 function computeStatus(remainingFraction) {
   if (remainingFraction === null || remainingFraction === undefined) return { label: 'Exhausted', color: '#6b7494', pulse: false };
-  if (remainingFraction <= 0) return { label: 'Exhausted', color: '#6b7494', pulse: false };
+  if (remainingFraction <= EXHAUSTION_THRESHOLD) return { label: 'Exhausted', color: '#6b7494', pulse: false };
   if (remainingFraction > 0.35) return { label: 'Available', color: '#22c55e', pulse: true, fast: false };
   if (remainingFraction >= 0.15) return { label: 'Low', color: '#f59e0b', pulse: false };
   return { label: 'Critical', color: '#ef4444', pulse: true, fast: true };
@@ -700,6 +702,7 @@ function computeStatus(remainingFraction) {
 
 function getProgressColor(fraction) {
   if (fraction === null || fraction === undefined) return '#6b7494';
+  if (fraction <= EXHAUSTION_THRESHOLD) return '#6b7494';
   if (fraction > 0.35) return '#22c55e';
   if (fraction >= 0.15) return '#f59e0b';
   return '#ef4444';
@@ -744,7 +747,7 @@ function tierStatus(groups) {
     for (const m of models) {
       const f = m.remainingFraction;
       if (f === null || f === undefined) { worst = 'exhausted'; }
-      else if (f <= 0) { worst = 'exhausted'; }
+      else if (f <= EXHAUSTION_THRESHOLD) { worst = 'exhausted'; }
       else if (f < 0.15 && worst !== 'exhausted') { worst = 'critical'; }
       else if (f < 0.35 && worst !== 'exhausted' && worst !== 'critical') { worst = 'low'; }
     }
@@ -752,7 +755,7 @@ function tierStatus(groups) {
     const labels = { available: 'Available', low: 'Low', critical: 'Critical', exhausted: 'Exhausted' };
     const counts = { available: 0, total: models.length };
     for (const m of models) {
-      if (m.remainingFraction !== null && m.remainingFraction !== undefined && m.remainingFraction > 0) counts.available++;
+      if (m.remainingFraction !== null && m.remainingFraction !== undefined && m.remainingFraction > EXHAUSTION_THRESHOLD) counts.available++;
     }
     entries.push({ tier, status: worst, color: colors[worst], label: labels[worst], available: counts.available, total: counts.total });
   }
@@ -763,7 +766,7 @@ function accountAvailability(models) {
   if (!models || models.length === 0) return { available: 0, total: 0 };
   let avail = 0;
   for (const m of models) {
-    if (m.remainingFraction !== null && m.remainingFraction !== undefined && m.remainingFraction > 0) avail++;
+    if (m.remainingFraction !== null && m.remainingFraction !== undefined && m.remainingFraction > EXHAUSTION_THRESHOLD) avail++;
   }
   return { available: avail, total: models.length };
 }
