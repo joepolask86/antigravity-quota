@@ -8,7 +8,8 @@ const FETCH_TIMEOUT = 3000;
 const PORT_SCAN_RANGE = [40000, 50000];
 const PORT_SCAN_CONCURRENCY = 10;
 const EXHAUSTION_THRESHOLD = 0.005; // fractions below 0.5% are treated as 0
-const DATA_FILE = path.join(__dirname, 'data.json');
+const DATA_DIR = process.env.USER_DATA_DIR || __dirname;
+const DATA_FILE = path.join(DATA_DIR, 'data.json');
 
 let cachedServers = null;
 let cachedServersAt = 0;
@@ -290,6 +291,17 @@ function loadKnownAccounts() {
       if (!Array.isArray(list)) return [];
       return list;
     }
+    // Installed mode: migrate bundled data.json to writable user data dir on first run
+    if (process.env.USER_DATA_DIR && __dirname !== DATA_DIR) {
+      const bundledPath = path.join(__dirname, 'data.json');
+      if (fs.existsSync(bundledPath)) {
+        const dir = path.dirname(DATA_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.copyFileSync(bundledPath, DATA_FILE);
+        console.log(`Migrated data.json from ${bundledPath} to ${DATA_FILE}`);
+        return loadKnownAccounts();
+      }
+    }
   } catch (e) {
     console.error('loadKnownAccounts error:', e.message);
   }
@@ -420,11 +432,14 @@ async function fetchAllQuotas() {
   }
 
   // Post-process: lock exhausted accounts, unlock recovered ones
+  // Only recompute for connected accounts; offline accounts preserve their saved state
   for (const acc of ordered) {
-    if (allModelsExhausted(acc.models)) {
-      acc.locked = true;
-    } else {
-      acc.locked = false;
+    if (acc.connected) {
+      if (allModelsExhausted(acc.models)) {
+        acc.locked = true;
+      } else {
+        acc.locked = false;
+      }
     }
   }
 

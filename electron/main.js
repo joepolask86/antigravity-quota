@@ -16,7 +16,7 @@ let notifier = null;
 function startServer() {
   return new Promise((resolve, reject) => {
     serverProcess = fork(path.join(__dirname, '..', 'server.js'), [], {
-      env: { ...process.env, PORT: String(SERVER_PORT) },
+      env: { ...process.env, PORT: String(SERVER_PORT), USER_DATA_DIR: app.getPath('userData') },
       stdio: 'pipe',
     });
 
